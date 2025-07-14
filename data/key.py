@@ -1,0 +1,1 @@
+CONNECTION = 'mongodb+srv://tombaaaarton:Sparton95@cluster0.fwmopqc.mongodb.net/>retryWrites=true&w=majority&appName=Cluster0'

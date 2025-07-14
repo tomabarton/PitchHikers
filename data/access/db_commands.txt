@@ -1,0 +1,54 @@
+CREATE TABLE clubs (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    fname VARCHAR(255) NOT NULL,
+    lname VARCHAR(255) NOT NULL,
+    date_of_birth DATE NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE users_clubs (
+    user_id bigint NOT NULL REFERENCES users(id),
+    club_id bigint NOT NULL REFERENCES clubs(id),
+    PRIMARY KEY (user_id, club_id) 
+);
+
+CREATE FUNCTION insert_user(
+    _fname TEXT,
+    _lname TEXT,
+    _date_of_birth DATE,
+    _email TEXT,
+    _club_id integer
+)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    new_user_id bigint;
+BEGIN
+    INSERT INTO users (fname, lname, date_of_birth, email)
+    VALUES (_fname, _lname, _date_of_birth, _email)
+    RETURNING id INTO new_user_id;
+
+    IF _club_id > 0 THEN
+        INSERT INTO users_clubs (user_id, club_id)
+        VALUES (new_user_id, _club_id);
+    END IF;
+END;
+$$;
+
+CREATE TABLE cars (
+    reg PRIMARY KEY,
+    engine_type VARCHAR(16) NOT NULL,
+    engine_size NUMERIC(3, 1) NOT NULL,
+);
+
+CREATE TABLE users_cars (
+    user_id bigint NOT NULL REFERENCES users(id),
+    car_reg bigint NOT NULL REFERENCES cars(reg),
+    PRIMARY KEY (user_id, car_reg) 
+);
