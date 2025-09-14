@@ -1,16 +1,23 @@
 from dataclasses import dataclass
+from datetime import datetime
 
 @dataclass
 class Club:
 
+    id: int 
     name: str
-    id: int|None=None
 
-    def __str__(self) -> str:
-        return self.name
+    def params(self) -> list[str]:
+        return [self.name]    
+    
+@dataclass
+class Fixture:
 
-    def to_dict(self) -> dict[str,str]:
-        return {
-            'name': self.name
-        }
+    id: int
+    home_club: Club
+    away_club: Club
+    start_time: datetime
+
+    def params(self) -> list[str]:
+        return [self.home_club.name, self.away_club.name, self.start_time]    
     

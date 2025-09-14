@@ -2,7 +2,6 @@ from datetime import date
 import psycopg2
 from types import TracebackType
 from typing import Optional, Type, Any
-from utils.log import log
 
 
 class PostgresDB:
@@ -33,8 +32,7 @@ class PostgresDB:
             self.cursor = self.connection.cursor()
             return self
         except (Exception, psycopg2.DatabaseError) as e:
-            print(e)
-            log.error(f"Error connecting to the database: {e}")
+            print(f"Error connecting to the database: {e}")
 
     def __exit__(
         self, 
@@ -55,27 +53,26 @@ class PostgresDB:
             self.connection.commit()
             return True
         except (Exception, psycopg2.DatabaseError) as e:
-            print(e)
-            log.error(f"Error commiting to the database: {e}")
+            print(f"Error commiting to the database: {e}")
             return False
 
     def get_one(
             self, 
             query: str, 
-            params: dict[str,str] | None=None
+            params: list[str|int] | None=None
         ) -> tuple[Any] | None:
         try:
             self.cursor.execute(query, params)
             result: tuple[Any] | None = self.cursor.fetchone()
-            return result[0]
+            return result
         except (Exception, psycopg2.DatabaseError) as e:
-            log.error(f"Error fetching one record from the database: {e}")
+            print(f"Error fetching one record from the database: {e}")
             return None
-    
+
     def get_all(
             self, 
             query: str, 
-            params: dict[str,str] | None=None
+            params: list[str|int] | None=None
         ) -> list[tuple[Any]] | None:
         self.cursor.execute(query, params)
         return self.cursor.fetchall()
