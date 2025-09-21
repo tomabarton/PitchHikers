@@ -1,71 +1,60 @@
-from datetime import date
 import streamlit as st
-import pandas as pd
-import numpy as np
-from data.access.data_access import DataAccess
-from data.entity.club import Club
-from data.entity.user import User
 
+from data.access.data_access import DataAccess
+from data.entity.user import User
+from data.google.people import GooglePeopleClient
 
 
 st.set_page_config(page_title="Pitcher Hikers")
-st.write("# Welcome to Pitch Hickers")
+st.write("# Welcome to Pitch Hikers")
+
+st.sidebar.header("Login to Pitch Hikers")
+
 
 st.logo("pages/images/PitchHikersLogo.jpg", size="large")  # TODO: sort path
 
-st.sidebar.success("Login page")
+def is_existing_user() -> User | None:  # Singleton to stop re-creating
+    return DataAccess().is_existing_user(email)
 
-global dao 
-dao = DataAccess()
 
-def is_existing_user():  # Singleton to stop re-creating
-    return dao.is_existing_user(st.user.email)
+def create_user():
+    date_of_birth, id = GooglePeopleClient().get_user_details(), st.user.sub
+    user = User(id, fname, lname, date_of_birth, email)
+    DataAccess().create_user(user)
 
-def submit_user(
-        fname: str, 
-        lname: str, 
-        date_of_birth: date, 
-        email: str, 
-        supporting_club: Club|None,
-    ) -> bool:
-    user = User(None, fname, lname, date_of_birth, email)
-    dao = DataAccess()  # TODO: Add relevant details
-    return dao.create_user(user, supporting_club)
-
-def get_extra_user_info() -> tuple[date,Club|None]:
-    date_of_birth: date = st.date_input("Date of birth", format="YYYY/MM/DD", max_value="today", min_value="1900-01-01")
-    supporting_club: Club | None = st.selectbox("Supporting Club", dao.clubs_cache)
-    if not date_of_birth:
-        st.error("Please fill in all fields.")
-    else: 
-        return date_of_birth, supporting_club
+    return id, date_of_birth
 
 if not st.user.get("is_logged_in", False):
-    st.button("Login with Google", on_click=st.login)
+    st.sidebar.button("Login with Google", on_click=st.login)
     st.stop()
 
-if not is_existing_user():
-    st.write("Thank you for logging in! Please fill in your details below to register as a new user.")
-    with st.form("user_registration_form"):
-        date_of_birth, supporting_club = get_extra_user_info()
-    
-        submitted = st.form_submit_button("Submit")
-        
-        if submitted:
-            if not (date_of_birth):
-                st.error("Please fill in all fields.")
-            else:
-                fname = st.user["given_name"]  # Google user info
-                lname = st.user["family_name"]
-                email = st.user["email"]
-                if submit_user(fname, lname, date_of_birth, email, supporting_club):
-                    st.success(f"Thank you {fname} {lname} for registering!")
-                else:
-                    st.error("There was an error registering your details")
+else:
+    st.sidebar.button("Logout", on_click=st.logout)
 
-st.markdown(f"Welcome! {st.user.name}")
+fname = st.user.given_name  # Google user info
+lname = st.user.family_name
+email = st.user.email
 
-st.button("Log Out", on_click=st.logout)
+def delete_user_and_logout():
+    if DataAccess().delete_user(st.user.sub):
+        st.success("Your PitchHikers account has been deleted.")
+        st.logout()
+    else:
+        st.error("There was an error deleting your PitchHikers account. Please try again later.")
+
+user = is_existing_user()
+if not user:
+    st.markdown("A PitchHikers account associated with your Google login could not be detected - please create an account to continue.")
+    st.button("Create PitchHikers account", on_click=create_user)
+    st.stop()
+else:
+    st.sidebar.button("Delete account", on_click=delete_user_and_logout)
+
+
+
+if user:
+    st.session_state['user'] = user
+    st.markdown(f"Welcome to PitchHikers {fname}!")
 
 
 
